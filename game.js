@@ -3,75 +3,61 @@ let player, velocity = { x: 0, y: 0, z: 0 };
 let keys = { w: false, a: false, s: false, d: false, space: false };
 let gravity = 0.02, isJumping = false;
 let playerHealth = 100;
-let enemy, enemySpeed = 0.02;
+let enemy, enemySpeed = 0.07;
 let gameOver = false;
+let cameraAngleX = 0, cameraAngleY = 0;
+let isMouseDown = false;
 
 function init() {
     scene = new THREE.Scene();
     camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-    camera.position.set(0, 2, 5);
     renderer = new THREE.WebGLRenderer({ antialias: true });
     renderer.setSize(window.innerWidth, window.innerHeight);
     document.body.appendChild(renderer.domElement);
+
     const light = new THREE.DirectionalLight(0xffffff, 1);
     light.position.set(5, 10, 5);
-    light.castShadow = true;
     scene.add(light);
-    const skyGeo = new THREE.SphereGeometry(500, 32, 32);
-    const skyMat = new THREE.ShaderMaterial({
-        uniforms: {
-            topColor: { value: new THREE.Color(0x22b0dd) }, // Top color (sky)
-            bottomColor: { value: new THREE.Color(0x87CEEB) } // Bottom color (ground)
-        },
-        vertexShader: `
-            varying vec3 vWorldPosition;
-            void main() {
-                vWorldPosition = position;
-                gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
-            }
-        `,
-        fragmentShader: `
-            uniform vec3 topColor;
-            uniform vec3 bottomColor;
-            varying vec3 vWorldPosition;
-            void main() {
-                float h = normalize(vWorldPosition).y * 0.5 + 0.5;
-                gl_FragColor = vec4(mix(bottomColor, topColor, h), 1.0);
-            }
-        `,
-        side: THREE.BackSide
-    });
 
-    const sky = new THREE.Mesh(skyGeo, skyMat);
-    scene.add(sky);
+    const groundGeometry = new THREE.PlaneGeometry(100, 100);
     const textureLoader = new THREE.TextureLoader();
     const groundTexture = textureLoader.load("assets/grass.jpg");
     groundTexture.wrapS = THREE.RepeatWrapping;
     groundTexture.wrapT = THREE.RepeatWrapping;
     groundTexture.repeat.set(40, 40);
-    const groundGeometry = new THREE.PlaneGeometry(100, 100);
     const groundMaterial = new THREE.MeshStandardMaterial({ map: groundTexture });
     const ground = new THREE.Mesh(groundGeometry, groundMaterial);
     ground.rotation.x = -Math.PI / 2;
-    ground.receiveShadow = true;
     scene.add(ground);
+
     const loader = new THREE.GLTFLoader();
     loader.load("assets/untitled.glb", (gltf) => {
         player = gltf.scene;
         player.position.set(0, 0.5, 0);
         scene.add(player);
     });
-    const enemyGeometry = new THREE.BoxGeometry(1, 1, 1);
-    const enemyMaterial = new THREE.MeshStandardMaterial({ color: 0xff0000 });
-    enemy = new THREE.Mesh(enemyGeometry, enemyMaterial);
+
+    enemy = new THREE.Mesh(new THREE.BoxGeometry(1, 1, 1), new THREE.MeshStandardMaterial({ color: 0xff0000 }));
     enemy.position.set(5, 0.5, 5);
     scene.add(enemy);
+
     document.addEventListener("keydown", (event) => {
         if (keys.hasOwnProperty(event.key.toLowerCase())) keys[event.key.toLowerCase()] = true;
     });
     document.addEventListener("keyup", (event) => {
         if (keys.hasOwnProperty(event.key.toLowerCase())) keys[event.key.toLowerCase()] = false;
     });
+
+    document.addEventListener("mousedown", () => { isMouseDown = true; });
+    document.addEventListener("mouseup", () => { isMouseDown = false; });
+    document.addEventListener("mousemove", (event) => {
+        if (isMouseDown) {
+            cameraAngleX -= event.movementX * 0.002;
+            cameraAngleY += event.movementY * 0.002;
+            cameraAngleY = Math.max(-Math.PI / 2, Math.min(Math.PI / 2, cameraAngleY));
+        }
+    });
+
     animate();
 }
 
@@ -85,12 +71,12 @@ function updateEnemy() {
 }
 
 let lastDamageTime = 0;
-let damageInterval = 1000; // Enemy deals damage every 1000ms (1 second)
+let damageInterval = 1000;
 
 function dealDamage() {
     let now = Date.now();
-    if (now - lastDamageTime >= damageInterval) { // Check if enough time has passed
-        lastDamageTime = now; // Reset timer
+    if (now - lastDamageTime >= damageInterval) {
+        lastDamageTime = now;
         if (gameOver) return;
         playerHealth -= 10;
         updateHealthBar();
@@ -106,7 +92,6 @@ function dealDamage() {
 function updateHealthBar() {
     const healthBar = document.getElementById("healthBar");
     healthBar.style.width = playerHealth + "%";
-    // Change color of health bar based on health
     if (playerHealth > 50) {
         healthBar.style.backgroundColor = "green";
     } else if (playerHealth > 20) {
@@ -119,31 +104,26 @@ function updateHealthBar() {
 function animate() {
     if (gameOver) return;
     requestAnimationFrame(animate);
-    if (player) {
-        let moveSpeed = 0.1;
-        let velocityX = 0, velocityZ = 0;
-        if (keys.w) velocityZ = -moveSpeed;
-        if (keys.s) velocityZ = moveSpeed;
-        if (keys.a) velocityX = -moveSpeed;
-        if (keys.d) velocityX = moveSpeed;
-        player.position.x += velocityX;
-        player.position.z += velocityZ;
-        if (keys.space && !isJumping) {
-            velocity.y = 0.2;
-            isJumping = true;
-        }
-        if (isJumping) {
-            player.position.y += velocity.y;
-            velocity.y -= gravity;
-            if (player.position.y <= 0.5) {
-                player.position.y = 0.5;
-                isJumping = false;
-                velocity.y = 0;
-            }
-        }
-        camera.position.set(player.position.x, player.position.y + 2, player.position.z + 5);
-        camera.lookAt(player.position);
-    }
+
+    let moveSpeed = 0.1;
+    let direction = new THREE.Vector3(Math.sin(cameraAngleX), 0, Math.cos(cameraAngleX)).normalize();
+    let right = new THREE.Vector3().crossVectors(direction, new THREE.Vector3(0, 1, 0)).normalize();
+
+    let moveX = 0, moveZ = 0;
+    if (keys.w) moveZ -= moveSpeed;
+    if (keys.s) moveZ += moveSpeed;
+    if (keys.a) moveX += moveSpeed;
+    if (keys.d) moveX -= moveSpeed;
+    
+    player.position.addScaledVector(direction, moveZ);
+    player.position.addScaledVector(right, moveX);
+
+    let radius = 5;
+    camera.position.x = player.position.x + Math.sin(cameraAngleX) * Math.cos(cameraAngleY) * radius;
+    camera.position.z = player.position.z + Math.cos(cameraAngleX) * Math.cos(cameraAngleY) * radius;
+    camera.position.y = player.position.y + Math.sin(cameraAngleY) * radius + 2;
+    camera.lookAt(player.position);
+
     updateEnemy();
     renderer.render(scene, camera);
 }
