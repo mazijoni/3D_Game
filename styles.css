@@ -1,0 +1,188 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    background: black;
+}
+
+.game-container {
+    position: relative;
+    width: 80%;
+    height: 90%;
+    display: flex;
+    background: url('img/basement-with-door.png') no-repeat center;
+    background-size: cover;
+    border: 5px solid black;
+    border-radius: 30px;
+}
+
+.sidebar .item {
+    width: 50px;
+    height: 50px;
+    margin: 5px 0;
+    display: none;
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 8px;
+    border: 2px solid white;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.sidebar .item img {
+    width: 80%;
+    height: auto;
+}
+
+.clickable {
+    cursor: pointer;
+}
+
+.box {
+    position: absolute;
+    width: 80px;
+    height: 80px;
+    background: rgba(255, 255, 255, 0.2);
+    color: rgb(0, 0, 0);
+    text-align: center;
+    line-height: 80px;
+    font-weight: bold;
+    cursor: pointer;
+    border: 3px solid black;
+    border-radius: 10px;
+}
+
+#box1 {
+    left: 53%;
+    top: 70%;
+    transform: translate(-50%, -50%);
+}
+
+#box2 {
+    left: 22%;
+    top: 63%;
+    transform: translateY(-50%);
+}
+
+#door {
+    right: 28%;
+    top: 50%;
+    transform: translateY(-50%);
+}
+
+#keycard-location {
+    position: absolute;
+    font-weight: bold;
+    left: 87%;
+    top: 90%;
+    width: 50px;
+    height: 50px;
+    text-align: center;
+    line-height: 50px;
+    cursor: pointer;
+    color: #ffffff;
+}
+
+.menu-text {
+    position: absolute;
+    z-index: 10;
+    text-decoration: none;
+    font-size: 24px;
+    font-weight: bold;
+    padding: 20px 40px;
+    color: white;
+    background: #425560;
+    border-radius: 10px;
+    transition: 0.3s ease-in-out;
+}
+
+.menu-text:hover {
+    background: #3b4b54;
+    transform: scale(1.1);
+}
+
+.game-text {
+    position: absolute;
+    text-decoration: none;
+    font-size: 24px;
+    font-weight: bold;
+    padding: 15px 30px;
+    color: white;
+    background: #425560;
+    border-radius: 10px;
+    transition: 0.3s ease-in-out;
+    margin: 1%;
+}
+
+.game-text:hover {
+    background: #3b4b54;
+    transform: scale(1.1);
+}
+
+.img {
+    margin-left: 5%;    
+    margin-top: 5%;
+
+}
+
+.foreground-img {
+    position: absolute;
+    top: 60%;
+    left: 69%;
+    transform: translate(-50%, -50%);
+    width: 450px;
+    height: auto;
+    z-index: 11;
+    display: flex;
+}
+
+a {
+    text-decoration: none;
+  }
+
+  .menu-container {
+    position: absolute;
+    width: 80%;
+    height: 90%;
+    background: url('assets/grass.jpg ') no-repeat center;
+    background-size: cover;
+    border: 5px solid black;
+    border-radius: 30px;
+    filter: blur(10px);
+}
+
+#win {
+    position: absolute;
+    display: none;
+    color: #fff;
+    font-size: 4em;
+    margin: 50%;
+}
+
+.blury {
+    filter: blur(20px);
+}
+
+/* Health bar styling */
+#healthBarContainer {
+    position: absolute;
+    top: 20px;
+    left: 20px;
+    width: 200px;
+    height: 20px;
+    border: 2px solid #000;
+    background-color: #ddd;
+}
+
+#healthBar {
+    height: 100%;
+    width: 100%; /* Initial health is full */
+    background-color: green;
+}
